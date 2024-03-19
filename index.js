@@ -16,16 +16,17 @@ app.use(express.json());
 
 app.post("/api/send", async (req, res) => {
   try {
-    const { data_1, data_2, data_3, data_4, data_5 } = req.body;
+    const { data_1, data_2, data_3, data_4, data_5, data_6 } = req.body;
 
     // const LINE_NOTIFY_TOKEN = "QKAyMnPM7Zkmz2xTb178S6ilrvBtuUa9LZDwv12EBtP";
     const LINE_NOTIFY_TOKEN = "2fTD8Hfgpk64VH0pqYXsRzDzikjETmqniFu44vTt4dc";
     const message2 = `
-      DO Number = ${data_1 || ""}
-      รายการสินค้า = ${data_2 || ""}
-      จำนวนสินค้าที่คืน = ${data_3 || 0}
-      ปัญหาของการแจ้งคืน = ${data_4 || ""}
-      Remake = ${data_5 || ""}
+    DO Number = ${data_1 || ""}
+    รายการสินค้า = ${data_2 || ""}
+    จำนวนสินค้าที่คืน = ${data_3 || 0}
+    ปัญหาของการแจ้งคืน = ${data_4 || ""}
+    Remake = ${data_5 || ""}
+    ชื่อผู้แจ้ง = ${data_6 || ""}
     `;
 
     const response = await axios.post(
