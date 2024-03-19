@@ -6,7 +6,7 @@ import axios from "axios";
 const app = express();
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: ["http://localhost:5173", "http://localhost:5174" , "https://send-line.netlify.app"],
     methods: ["POST", " GET", "DELETE", "PUT"],
     credentials: true,
   })
