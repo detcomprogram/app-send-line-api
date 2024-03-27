@@ -27,7 +27,7 @@ app.post("/api/send", async (req, res) => {
     ปัญหาของการแจ้งคืน : ${data_4 || ""}
     Remake : ${data_5 || ""}
     ชื่อผู้แจ้ง : ${data_6 || ""}
-    วันที่ : ${data_7 || ""}
+    วันที่ส่งข้อมูล : ${data_7 || ""}
     `;
 
     const response = await axios.post(
