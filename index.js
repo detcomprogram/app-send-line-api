@@ -216,9 +216,19 @@ app.post("/api/report/excel", async (req, res) => {
 // Products *****************************************************************
 app.get('/api/product', async(req,res)=>{
   try {
-    const sqlSearch = `SELECT id, do_number, code, qty, count, note, remake, sign, date FROM return_product  `;
+    const sqlSearch = `SELECT  id, do_number, code, qty, count, note, remake, sign, date FROM return_product  `;
     const [result] = await pool.query(sqlSearch)
-    res.status(200).json(result)
+
+    let sumQty = 0
+    for (const item of result) {
+      sumQty += item.qty
+    }
+
+    const resData = {
+      data : result,
+      sum : sumQty
+    }
+    res.status(200).json(resData)
     
   } catch (error) {
     console.log(error);
