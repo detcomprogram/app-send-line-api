@@ -216,7 +216,7 @@ app.post("/api/report/excel", async (req, res) => {
 // Products *****************************************************************
 app.get('/api/product', async(req,res)=>{
   try {
-    const sqlSearch = `SELECT do_number, code, qty, count, note, remake, sign, date FROM return_product  `;
+    const sqlSearch = `SELECT id, do_number, code, qty, count, note, remake, sign, date FROM return_product  `;
     const [result] = await pool.query(sqlSearch)
     res.status(200).json(result)
     
@@ -230,7 +230,7 @@ app.get('/api/product/:id', async(req,res)=>{
   try {
     const {id} = req.params
    if(id){
-    const sqlSearch = `SELECT do_number, code, qty, count, note, remake, sign, date FROM return_product WHERE id = ?  `;
+    const sqlSearch = `SELECT id, do_number, code, qty, count, note, remake, sign, date FROM return_product WHERE id = ?  `;
     const [result] = await pool.query(sqlSearch, [id])
     res.status(200).json(result)
    }
@@ -251,6 +251,21 @@ app.post('/api/product', async (req,res)=> {
     if(result){
       res.status(200).json('แก้ไขสำเร็จ')
     }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error.message);
+  }
+})
+
+app.delete('/api/product/:id' , async (req,res)=>{
+  try {
+    const {id} = req.params
+    if(id){
+      const sql = `DELETE FROM return_product WHERE id = ?`
+      await pool.query(sql, [id])
+      res.status(200).json({message: 'ทำรายการสำเร็จ'})
+    }
+    
   } catch (error) {
     console.log(error);
     res.status(500).json(error.message);
