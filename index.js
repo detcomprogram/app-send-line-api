@@ -150,8 +150,20 @@ app.post("/api/report", async (req, res) => {
       sqlSearch += ` AND do_number = ?`;
       queryParams.push(do_number);
     }
+
     const [result] = await pool.query(sqlSearch, queryParams);
-    res.status(200).json(result);
+
+
+    let sumQty = 0
+    for (const item of result) {
+      sumQty += item.qty
+    }
+
+    const resData = {
+      data : result,
+      sum : sumQty
+    }
+    res.status(200).json(resData);
   } catch (error) {
     console.log(error);
     res.status(500).json(error.message);
@@ -219,16 +231,8 @@ app.get('/api/product', async(req,res)=>{
     const sqlSearch = `SELECT  id, do_number, code, qty, count, note, remake, sign, date FROM return_product  `;
     const [result] = await pool.query(sqlSearch)
 
-    let sumQty = 0
-    for (const item of result) {
-      sumQty += item.qty
-    }
 
-    const resData = {
-      data : result,
-      sum : sumQty
-    }
-    res.status(200).json(resData)
+    res.status(200).json(result)
     
   } catch (error) {
     console.log(error);
