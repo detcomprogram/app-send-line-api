@@ -141,10 +141,10 @@ app.post("/api/report", async (req, res) => {
     const queryParams = [];
 
     if (date_start && date_end && do_number) {
-      sqlSearch += ` AND date = ? AND date = ? AND do_number = ?`;
+      sqlSearch += ` AND date BETWEEN ? AND ? AND do_number = ?`;
       queryParams.push(date_start, date_end, do_number);
     } else if (date_start && date_end) {
-      sqlSearch += ` AND date = ? AND date = ?`;
+      sqlSearch += ` AND date BETWEEN ? AND ?`;
       queryParams.push(date_start, date_end);
     } else if (date_start) {
       sqlSearch += ` AND date = ?`;
@@ -184,10 +184,10 @@ app.post("/api/report/excel", async (req, res) => {
     const queryParams = [];
 
     if (date_start && date_end && do_number) {
-      sqlSearch += ` AND date = ? AND date = ? AND do_number = ?`;
+      sqlSearch += ` AND date BETWEEN ? AND ? AND do_number = ?`;
       queryParams.push(date_start, date_end, do_number);
     } else if (date_start && date_end) {
-      sqlSearch += ` AND date = ? AND date = ?`;
+      sqlSearch += ` AND date BETWEEN ? AND ?`;
       queryParams.push(date_start, date_end);
     } else if (date_start) {
       sqlSearch += ` AND date = ?`;
