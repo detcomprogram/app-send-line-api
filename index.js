@@ -136,16 +136,22 @@ app.post("/api/send", async (req, res) => {
 // Report ****************************************************************
 app.post("/api/report", async (req, res) => {
   try {
-    const { date, do_number } = req.body;
+    const { date_start, date_end, do_number } = req.body;
     let sqlSearch = `SELECT * FROM return_product WHERE 1  `;
     const queryParams = [];
 
-    if (date && do_number) {
-      sqlSearch += ` AND date = ? AND do_number = ?`;
-      queryParams.push(date, do_number);
-    } else if (date) {
+    if (date_start && date_end && do_number) {
+      sqlSearch += ` AND date = ? AND date = ? AND do_number = ?`;
+      queryParams.push(date_start, date_end, do_number);
+    } else if (date_start && date_end) {
+      sqlSearch += ` AND date = ? AND date = ?`;
+      queryParams.push(date_start, date_end);
+    } else if (date_start) {
       sqlSearch += ` AND date = ?`;
-      queryParams.push(date);
+      queryParams.push(date_start);
+    } else if (date_end) {
+      sqlSearch += ` AND date = ?`;
+      queryParams.push(date_end);
     } else if (do_number) {
       sqlSearch += ` AND do_number = ?`;
       queryParams.push(do_number);
@@ -153,16 +159,15 @@ app.post("/api/report", async (req, res) => {
 
     const [result] = await pool.query(sqlSearch, queryParams);
 
-
-    let sumQty = 0
+    let sumQty = 0;
     for (const item of result) {
-      sumQty += item.qty
+      sumQty += item.qty;
     }
 
     const resData = {
-      data : result,
-      sum : sumQty
-    }
+      data: result,
+      sum: sumQty,
+    };
     res.status(200).json(resData);
   } catch (error) {
     console.log(error);
@@ -173,17 +178,23 @@ app.post("/api/report", async (req, res) => {
 // Report/excel ****************************************************************
 app.post("/api/report/excel", async (req, res) => {
   try {
-    const { date, do_number } = req.body;
-    
+    const { date_start, date_end, do_number } = req.body;
+
     let sqlSearch = `SELECT do_number, code, qty, count, note, remake, sign, date FROM return_product WHERE 1  `;
     const queryParams = [];
 
-    if (date && do_number) {
-      sqlSearch += ` AND date = ? AND do_number = ?`;
-      queryParams.push(date, do_number);
-    } else if (date) {
+    if (date_start && date_end && do_number) {
+      sqlSearch += ` AND date = ? AND date = ? AND do_number = ?`;
+      queryParams.push(date_start, date_end, do_number);
+    } else if (date_start && date_end) {
+      sqlSearch += ` AND date = ? AND date = ?`;
+      queryParams.push(date_start, date_end);
+    } else if (date_start) {
       sqlSearch += ` AND date = ?`;
-      queryParams.push(date);
+      queryParams.push(date_start);
+    } else if (date_end) {
+      sqlSearch += ` AND date = ?`;
+      queryParams.push(date_end);
     } else if (do_number) {
       sqlSearch += ` AND do_number = ?`;
       queryParams.push(do_number);
@@ -218,7 +229,6 @@ app.post("/api/report/excel", async (req, res) => {
     // Write to response stream
     await workbook.xlsx.write(res);
     res.end();
-
   } catch (error) {
     console.log(error);
     res.status(500).json(error.message);
@@ -226,65 +236,80 @@ app.post("/api/report/excel", async (req, res) => {
 });
 
 // Products *****************************************************************
-app.get('/api/product', async(req,res)=>{
+app.get("/api/product", async (req, res) => {
   try {
     const sqlSearch = `SELECT  id, do_number, code, qty, count, note, remake, sign, date FROM return_product  `;
-    const [result] = await pool.query(sqlSearch)
+    const [result] = await pool.query(sqlSearch);
 
-
-    res.status(200).json(result)
-    
+    res.status(200).json(result);
   } catch (error) {
     console.log(error);
     res.status(500).json(error.message);
   }
-})
+});
 
-app.get('/api/product/:id', async(req,res)=>{
+app.get("/api/product/:id", async (req, res) => {
   try {
-    const {id} = req.params
-   if(id){
-    const sqlSearch = `SELECT id, do_number, code, qty, count, note, remake, sign, date FROM return_product WHERE id = ?  `;
-    const [result] = await pool.query(sqlSearch, [id])
-    res.status(200).json(result)
-   }
-    
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(error.message);
-  }
-})
-
-app.post('/api/product', async (req,res)=> {
-  try {
-    const { data_1, data_2, data_3, data_4, data_5, data_6, data_7, count, id } =
-    req.body;
-
-    const sql = `UPDATE return_product SET do_number = ? , code = ? , qty = ? , count = ? , note = ? , remake = ? , sign = ? , date = ? WHERE id = ? `
-    const [result] = await pool.query(sql, [data_1 || "", data_2 || "", data_3 || 0, count || "" , data_4 || "", data_5  || "", data_6 || "", data_7 || "", id])
-    if(result){
-      res.status(200).json('แก้ไขสำเร็จ')
+    const { id } = req.params;
+    if (id) {
+      const sqlSearch = `SELECT id, do_number, code, qty, count, note, remake, sign, date FROM return_product WHERE id = ?  `;
+      const [result] = await pool.query(sqlSearch, [id]);
+      res.status(200).json(result);
     }
   } catch (error) {
     console.log(error);
     res.status(500).json(error.message);
   }
-})
+});
 
-app.delete('/api/product/:id' , async (req,res)=>{
+app.post("/api/product", async (req, res) => {
   try {
-    const {id} = req.params
-    if(id){
-      const sql = `DELETE FROM return_product WHERE id = ?`
-      await pool.query(sql, [id])
-      res.status(200).json({message: 'ทำรายการสำเร็จ'})
+    const {
+      data_1,
+      data_2,
+      data_3,
+      data_4,
+      data_5,
+      data_6,
+      data_7,
+      count,
+      id,
+    } = req.body;
+
+    const sql = `UPDATE return_product SET do_number = ? , code = ? , qty = ? , count = ? , note = ? , remake = ? , sign = ? , date = ? WHERE id = ? `;
+    const [result] = await pool.query(sql, [
+      data_1 || "",
+      data_2 || "",
+      data_3 || 0,
+      count || "",
+      data_4 || "",
+      data_5 || "",
+      data_6 || "",
+      data_7 || "",
+      id,
+    ]);
+    if (result) {
+      res.status(200).json("แก้ไขสำเร็จ");
     }
-    
   } catch (error) {
     console.log(error);
     res.status(500).json(error.message);
   }
-})
+});
+
+app.delete("/api/product/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (id) {
+      const sql = `DELETE FROM return_product WHERE id = ?`;
+      await pool.query(sql, [id]);
+      res.status(200).json({ message: "ทำรายการสำเร็จ" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error.message);
+  }
+});
 
 app.listen(port, () => {
   console.log("server is 8081");
