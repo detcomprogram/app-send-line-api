@@ -282,9 +282,13 @@ app.post("/api/report/excel", async (req, res) => {
 // Products *****************************************************************
 app.get("/api/product", async (req, res) => {
   try {
-    const sqlSearch = `SELECT  id, do_number, code, qty, count, note, remake, sign, date, agency FROM return_product  `;
-    const [result] = await pool.query(sqlSearch);
+    const {search} = req.query
+    let sqlSearch = `SELECT  id, do_number, code, qty, count, note, remake, sign, date, agency FROM return_product  `;
+    if(search){
+      sqlSearch += ` WHERE do_number LIKE '%${search}%' `
+    }
 
+    const [result] = await pool.query(sqlSearch);
     res.status(200).json(result);
   } catch (error) {
     console.log(error);
