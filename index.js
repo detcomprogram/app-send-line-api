@@ -19,7 +19,7 @@ app.use(
     credentials: true,
   })
 );
-const port = process.env.PORT || 8081;
+const port = process.env.PORT || 3000;
 app.use(express.json());
 
 // Register ************************************************************
@@ -77,11 +77,20 @@ app.post("/login", async (req, res) => {
 
 app.post("/api/send", async (req, res) => {
   try {
-    const { data_1, data_2, data_3, data_4, data_5, data_6, data_7, count } =
-      req.body;
+    const {
+      data_1,
+      data_2,
+      data_3,
+      data_4,
+      data_5,
+      data_6,
+      data_7,
+      data_8,
+      count,
+    } = req.body;
 
-       // const LINE_NOTIFY_TOKEN = "QKAyMnPM7Zkmz2xTb178S6ilrvBtuUa9LZDwv12EBtP";
-    const LINE_NOTIFY_TOKEN = "2fTD8Hfgpk64VH0pqYXsRzDzikjETmqniFu44vTt4dc";
+    const LINE_NOTIFY_TOKEN = "QKAyMnPM7Zkmz2xTb178S6ilrvBtuUa9LZDwv12EBtP";
+    // const LINE_NOTIFY_TOKEN = "2fTD8Hfgpk64VH0pqYXsRzDzikjETmqniFu44vTt4dc";
     const message2 = `
     DO Number : ${data_1 || ""}
     รายการสินค้า : ${data_2 || ""}
@@ -91,6 +100,7 @@ app.post("/api/send", async (req, res) => {
     Remake : ${data_5 || ""}
     ชื่อผู้แจ้ง : ${data_6 || ""}
     วันที่ส่งข้อมูล : ${data_7 || ""}
+    หน่วยงานที่รับผิดชอบ : ${data_8 || ""}
     `;
 
     const response = await axios.post(
@@ -107,7 +117,7 @@ app.post("/api/send", async (req, res) => {
     );
 
     if (response.data.status === 200) {
-      const sql = `INSERT INTO return_product  (do_number, code, qty, count, note, remake, sign, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?) `;
+      const sql = `INSERT INTO return_product  (do_number, code, qty, count, note, remake, sign, date, agency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) `;
       const [result] = await pool.query(sql, [
         data_1 || 0,
         data_2 || 0,
@@ -117,6 +127,7 @@ app.post("/api/send", async (req, res) => {
         data_5 || "",
         data_6 || "",
         data_7 || "",
+        data_8 || "",
       ]);
 
       if (result) {
@@ -164,10 +175,27 @@ app.post("/api/report", async (req, res) => {
       sumQty += item.qty;
     }
 
+    let data = [];
+    for (const item of result) {
+      const date1 = new Date(item.date);
+      const date2 = new Date();
+      const oneDay = 1000 * 60 * 60 * 24;
+      const differenceInTime = date2.getTime() - date1.getTime(); // หาความแตกต่างในหน่วยมิลลิวินาที
+      const differenceInDays = Math.floor(differenceInTime / oneDay); // แปลงเป็นจำนวนวัน
+
+      const newData = {
+        ...item,
+        count_day: item.status === 0 ? differenceInDays || 0 : 0,
+      };
+      data.push(newData);
+    }
+
     const resData = {
-      data: result,
+      data: data,
       sum: sumQty,
     };
+
+    
     res.status(200).json(resData);
   } catch (error) {
     console.log(error);
@@ -179,8 +207,9 @@ app.post("/api/report", async (req, res) => {
 app.post("/api/report/excel", async (req, res) => {
   try {
     const { date_start, date_end, do_number } = req.body;
+    console.log(req.body);
 
-    let sqlSearch = `SELECT do_number, code, qty, count, note, remake, sign, date FROM return_product WHERE 1  `;
+    let sqlSearch = `SELECT do_number, code, qty, count, note, remake, sign, date, status , date_status FROM return_product WHERE 1  `;
     const queryParams = [];
 
     if (date_start && date_end && do_number) {
@@ -201,17 +230,32 @@ app.post("/api/report/excel", async (req, res) => {
     }
     const [result] = await pool.query(sqlSearch, queryParams);
 
-    console.log(result);
+    let data = [];
+    for (const item of result) {
+      const date1 = new Date(item.date);
+      const date2 = new Date();
+      const oneDay = 1000 * 60 * 60 * 24;
+      const differenceInTime = date2.getTime() - date1.getTime(); // หาความแตกต่างในหน่วยมิลลิวินาที
+      const differenceInDays = Math.floor(differenceInTime / oneDay); // แปลงเป็นจำนวนวัน
+
+      const newData = {
+        ...item,
+        count_day: item.status === 0 ? differenceInDays || 0 : 0,
+      };
+      data.push(newData);
+    }
+
+
 
     const workbook = new excel.Workbook();
     const workSheet = workbook.addWorksheet("Return Product");
 
     // Add headers
-    const headers = Object.keys(result[0]);
+    const headers = Object.keys(data[0]);
     workSheet.addRow(headers);
 
     // Add data rows
-    result.forEach((row) => {
+    data.forEach((row) => {
       const rowData = Object.values(row);
       workSheet.addRow(rowData);
     });
@@ -238,7 +282,7 @@ app.post("/api/report/excel", async (req, res) => {
 // Products *****************************************************************
 app.get("/api/product", async (req, res) => {
   try {
-    const sqlSearch = `SELECT  id, do_number, code, qty, count, note, remake, sign, date FROM return_product  `;
+    const sqlSearch = `SELECT  id, do_number, code, qty, count, note, remake, sign, date, agency FROM return_product  `;
     const [result] = await pool.query(sqlSearch);
 
     res.status(200).json(result);
@@ -252,7 +296,7 @@ app.get("/api/product/:id", async (req, res) => {
   try {
     const { id } = req.params;
     if (id) {
-      const sqlSearch = `SELECT id, do_number, code, qty, count, note, remake, sign, date FROM return_product WHERE id = ?  `;
+      const sqlSearch = `SELECT id, do_number, code, qty, count, note, remake, sign, date, agency FROM return_product WHERE id = ?  `;
       const [result] = await pool.query(sqlSearch, [id]);
       res.status(200).json(result);
     }
@@ -272,11 +316,12 @@ app.post("/api/product", async (req, res) => {
       data_5,
       data_6,
       data_7,
+      data_8,
       count,
       id,
     } = req.body;
 
-    const sql = `UPDATE return_product SET do_number = ? , code = ? , qty = ? , count = ? , note = ? , remake = ? , sign = ? , date = ? WHERE id = ? `;
+    const sql = `UPDATE return_product SET do_number = ? , code = ? , qty = ? , count = ? , note = ? , remake = ? , sign = ? , date = ?, agency = ? WHERE id = ? `;
     const [result] = await pool.query(sql, [
       data_1 || "",
       data_2 || "",
@@ -286,6 +331,7 @@ app.post("/api/product", async (req, res) => {
       data_5 || "",
       data_6 || "",
       data_7 || "",
+      data_8 || "",
       id,
     ]);
     if (result) {
@@ -311,6 +357,37 @@ app.delete("/api/product/:id", async (req, res) => {
   }
 });
 
+// Update Status *****************************************************************
+app.get("/api/status", async (req, res) => {
+  try {
+    const sqlSearch = `SELECT  id, do_number, code, qty, count, note, remake, sign, date, agency FROM return_product WHERE status =  0  `;
+    const [result] = await pool.query(sqlSearch);
+    if (result) {
+      res.status(200).json(result);
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error.message);
+  }
+});
+
+app.put("/api/status", async (req, res) => {
+  try {
+    const { status, date, id } = req.body;
+
+    if (status && date && id) {
+      const sql = `UPDATE return_product SET status = ? , date_status = ? WHERE id = ? `;
+      await pool.query(sql, [status, date, id]);
+      res.status(200).json({ message: "ทำรายการสำเร็จ" });
+    } else {
+      throw new Error("ส่งข้อมูลมาไม่ครบ");
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error.message);
+  }
+});
+
 app.listen(port, () => {
-  console.log("server is 8081");
+  console.log("server is 3000");
 });
